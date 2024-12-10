@@ -19,7 +19,7 @@ class RedisClient {
   async get(key) {
     try {
       const value = await this.client.get(key);
-      return JSON.parse(value);;
+      return JSON.parse(value);
     } catch (error) {
       console.error('Error getting value from Redis:', error);
       return null;
