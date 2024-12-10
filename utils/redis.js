@@ -12,8 +12,14 @@ class RedisClient {
     this.client.connect();
   }
 
-  isAlive() {
-    return this.client.connected && this.client.ready;
+  async isAlive() {
+    try {
+      await this.client.connect();
+      return this.client.isOpen;
+    } catch (error) {
+      console.error('Error checking Redis client:', error);
+      return false;
+    }
   }
 
   async get(key) {
