@@ -1,8 +1,8 @@
-const redis = require('redis');
+import { createClient } from 'redis';
 
 class RedisClient {
   constructor() {
-    this.client = redis.createClient();
+    this.client = createClient();
 
     this.client.on('error', (err) => {
       console.error('Redis Client Error:', err);
@@ -19,7 +19,7 @@ class RedisClient {
   async get(key) {
     try {
       const value = await this.client.get(key);
-      return JSON.parse(value);
+      return value;
     } catch (error) {
       console.error('Error getting value from Redis:', error);
       return null;
