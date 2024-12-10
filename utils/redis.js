@@ -1,8 +1,8 @@
-import { createClient } from 'redis';
+const redis = require('redis');
 
 class RedisClient {
   constructor() {
-    this.client = createClient();
+    this.client = redis.createClient();
 
     this.client.on('error', (err) => {
       console.error('Redis Client Error:', err);
@@ -12,14 +12,8 @@ class RedisClient {
     this.client.connect();
   }
 
-  async isAlive() {
-    try {
-      await this.client.connect();
-      return this.client.isOpen;
-    } catch (error) {
-      console.error('Error checking Redis client:', error);
-      return false;
-    }
+  isAlive() {
+    return this.client.isOpen;
   }
 
   async get(key) {
