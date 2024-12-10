@@ -1,65 +1,57 @@
-const redis = require('redis');
+const { MongoClient } = require('mongodb');
 
-class RedisClient {
+class DBClient {
   constructor() {
-    this.client = redis.createClient();
+    const host = process.env.DB_HOST || 'localhost';
+    const port = process.env.DB_PORT || '27017';
+    const database = process.env.DB_DATABASE || 'files_manager';
 
-    this.client.on('error', (err) => {
-      console.error('Redis Client Error:', err);
-    });
+    const url = `mongodb://${host}:${port}`;
 
-    // Explicitly connect the client
-    this.client.on('connect', () => {
-      console.log('Connected to Redis server.');
-    });
+    this.client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
+    this.database = null;
+
+    try {
+      this.client.connect((err) => {
+        if (err) {
+          console.error('Error connecting to MongoDB:', err);
+          this.client = null;
+        } else {
+          this.database = this.client.db(database);
+        }
+      });
+    } catch (error) {
+      console.error('Connection error:', error);
+      this.client = null;
+    }
   }
 
   isAlive() {
-    return this.client.connected;
+    return this.client.topology.isConnected() && this._db !== null;
   }
 
-  // Manually promisify get method with proper error handling
-  get(key) {
-    return new Promise((resolve, reject) => {
-      this.client.get(key, (err, value) => {
-        if (err) {
-          console.error('Error getting value from Redis:', err);
-          reject(new Error('Error getting value from Redis'));
-        } else {
-          resolve(JSON.parse(value));
-        }
-      });
-    });
+  async nbUsers() {
+    if (!this.database) return 0;
+
+    try {
+      return await this.database.collection('users').count();
+    } catch (error) {
+      console.error('Error counting users:', error);
+      return 0;
+    }
   }
 
-  // Manually promisify setex method with proper error handling
-  set(key, value, duration) {
-    return new Promise((resolve, reject) => {
-      this.client.setex(key, duration, JSON.stringify(value), (err) => {
-        if (err) {
-          console.error('Error setting value in Redis:', err);
-          reject(new Error('Error setting value in Redis'));
-        } else {
-          resolve(true);
-        }
-      });
-    });
-  }
+  async nbFiles() {
+    if (!this.database) return 0;
 
-  // Manually promisify del method with proper error handling
-  del(key) {
-    return new Promise((resolve, reject) => {
-      this.client.del(key, (err) => {
-        if (err) {
-          console.error('Error deleting key from Redis:', err);
-          reject(new Error('Error deleting key from Redis'));
-        } else {
-          resolve(true);
-        }
-      });
-    });
+    try {
+      return await this.database.collection('files').count();
+    } catch (error) {
+      console.error('Error counting files:', error);
+      return 0;
+    }
   }
 }
 
-const redisClient = new RedisClient();
-module.exports = redisClient;
+const dbClient = new DBClient();
+module.exports = dbClient;
