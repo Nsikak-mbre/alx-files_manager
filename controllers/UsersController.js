@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import dbClient from '../utils/db';
 
 class UsersController {
@@ -27,9 +27,11 @@ class UsersController {
         return res.status(400).json({ error: 'User already exists' });
       }
 
-      // Hash the password using bcrypt with a salt factor of 10
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      // Hash the password using SHA1
+      const hashedPassword = crypto
+        .createHash('sha1')
+        .update(password)
+        .digest('hex');
 
       // Insert the new user into the database
       const result = await userCollection.insertOne({
